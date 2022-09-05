@@ -16,11 +16,13 @@ MLX_PATH = include/mlx
 LIBTF_PATH = include/libft
 
 %.o: %.c
+	@echo "compiling $<"
 	@$(CC) $(CCFLAGS) -c $< -o $@
 
 $(NAME): $(OBJS_MAIN) $(OBJS)
 	@$(MAKE) -C include/libft
 	@$(CC) $(CCFLAGS) $(SANITIZE) $(OBJS_MAIN) $(OBJS) include/libft/libft.a -o $(NAME)
+	@echo "Cub3d done!"
 	
 
 all: $(NAME)

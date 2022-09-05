@@ -6,7 +6,7 @@
 /*   By: jcid-gon <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/08/31 11:35:14 by jcid-gon          #+#    #+#             */
-/*   Updated: 2022/08/31 14:57:02 by jcid-gon         ###   ########.fr       */
+/*   Updated: 2022/09/05 14:16:51 by jcid-gon         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,8 @@
 typedef struct s_map{
 	char	**line;
 	int		size;
+	int		start;
+	size_t		max_len;
 	char	*north;
 	char	*south;
 	char	*east;
