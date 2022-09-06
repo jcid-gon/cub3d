@@ -21,7 +21,8 @@ LIBTF_PATH = include/libft
 
 $(NAME): $(OBJS_MAIN) $(OBJS)
 	@$(MAKE) -C include/libft
-	@$(CC) $(CCFLAGS) $(SANITIZE) $(OBJS_MAIN) $(OBJS) include/libft/libft.a -o $(NAME)
+	@$(MAKE) -C include/mlx
+	@$(CC) $(CCFLAGS) $(SANITIZE) -framework OpenGL -framework AppKit  $(OBJS_MAIN) $(OBJS) include/libft/libft.a include/mlx/libmlx.a -o $(NAME)
 	@echo "Cub3d done!"
 	
 
@@ -29,6 +30,7 @@ all: $(NAME)
 
 clean:
 	@$(MAKE) clean -C include/libft
+	@$(MAKE) clean -C include/mlx
 	@$(RM) $(OBJS)
 	@$(RM) $(OBJS_MAIN)
 

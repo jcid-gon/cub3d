@@ -6,7 +6,7 @@
 /*   By: jcid-gon <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/08/31 11:25:32 by jcid-gon          #+#    #+#             */
-/*   Updated: 2022/09/05 15:52:38 by jcid-gon         ###   ########.fr       */
+/*   Updated: 2022/09/06 14:32:22 by jcid-gon         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,38 @@ void	error_message(char *str)
 {
 	printf("Error\n%s\n", str);
 	exit (1);
+}
+
+void	pixel_put(t_data *data, int x, int y, int color)
+{
+	char	*dst;
+
+	dst = data->addr + (y * data->line_length + x * (data->bits_per_pixel / 8));
+	*(unsigned int*)dst = color;
+}
+
+void	display_background(t_map *map)
+{
+	int	y;
+	int	x;
+
+	map->bg.img = mlx_new_image(map->mlx, 1920, 1080);
+	map->bg.addr = mlx_get_data_addr(map->bg.img, &map->bg.bits_per_pixel, &map->bg.line_length,&map->bg.endian);
+	y = 0;
+	while(y < 1080)
+	{
+		x = 0;
+		while (x < 1920)
+		{
+			if (y < 540)
+				pixel_put(&map->bg, x, y, map->c_ceiling);
+			else
+				pixel_put(&map->bg, x, y, map->c_floor);
+			x++;
+		}
+		y++;
+	}
+	mlx_put_image_to_window(map->mlx, map->mlx_win, map->bg.img, 0, 0);
 }
 
 //MAP READER
@@ -77,13 +109,13 @@ void	get_sides(t_map *map)
 			if(str[0] != NULL)
 			{
 				if (ft_strncmp(str[0], "NO", 2) == 0)
-					map->north = ft_strdup(str[1]);
+					map->north.rp = ft_strdup(str[1]);
 				else if (ft_strncmp(str[0], "SO", 2) == 0)
-					map->south = ft_strdup(str[1]);
+					map->south.rp = ft_strdup(str[1]);
 				else if (ft_strncmp(str[0], "WE", 2) == 0)
-					map->west = ft_strdup(str[1]);
+					map->west.rp = ft_strdup(str[1]);
 				else if (ft_strncmp(str[0], "EA", 2) == 0)
-					map->east = ft_strdup(str[1]);
+					map->east.rp = ft_strdup(str[1]);
 				else if (ft_strncmp(str[0], "F", 1) == 0)
 					map->floor = ft_strdup(str[1]);
 				else if (ft_strncmp(str[0], "C", 1) == 0)
@@ -193,12 +225,106 @@ void map_reader(t_map *map, char *argv)
 	close (fd);
 	get_sides(map);
 	check_walls(map);
-	printf("NORTH = %s\n", map->north);
-	printf("SOUTH = %s\n", map->south);
-	printf("WEST = %s\n", map->west);
-	printf("EAST = %s\n", map->east);
+	printf("NORTH = %s\n", map->north.rp);
+	printf("SOUTH = %s\n", map->south.rp);
+	printf("WEST = %s\n", map->west.rp);
+	printf("EAST = %s\n", map->east.rp);
 	printf("FLOOR = %s\n", map->floor);
 	printf("CEILING = %s\n", map->ceiling);
+}
+
+void	player_starter(t_map *map)
+{
+	int	y;
+	int	x;
+	int	is;
+
+	map->player.dir[0] = -1;
+	map->player.dir[1] = 0;
+	map->player.plane[0] = 0;
+	map->player.plane[1] = 0.66;
+	is = 0;
+	y = map->start;
+	while (y < map->size)
+	{
+		if (map->line[y][0] != '\0')
+		{
+			x = 0;
+			while (x < (int) ft_strlen(map->line[y]))
+			{
+				if (map->line[y][x] == 'N')
+				{
+					map->player.pos[0] = x;
+					map->player.pos[1] = y;
+					is++;
+				}
+				else if (map->line[y][x] != '0' && map->line[y][x] != '1' && map->line[y][x] != ' ')
+					error_message("Unknown element on map");
+			x++;
+			}
+		}
+		y++;
+	}
+	if (is == 0)
+		error_message("Player not found");
+	else if (is > 1)
+		error_message("More than one player");
+	printf("PLAYER_POS=%.2f, %.2f\n", map->player.pos[0], map->player.pos[1]);
+}
+
+//INITALIZATION
+
+void	image_init(t_map *map)
+{
+	map->mlx = mlx_init();
+	map->mlx_win = mlx_new_window(map->mlx, 1920, 1080, "cub3d");
+}
+
+int	get_colors(char *str)
+{
+	char	**index;
+	int		*ret;
+	int		i;
+
+	index = ft_split(str, ',');
+	ret = malloc(sizeof(int) * 4);
+	i = 0;
+	while(i < 3)
+	{
+		ret[i] = ft_atoi(index[i]);
+		if (ret[i] < 0 || ret[i] > 255)
+			error_message("Incorrect RGB numbers");
+		i++;
+	}
+	return(0 << 24 | ret[0] << 16 | ret[1] << 8 | ret[2]);
+}
+
+void put_background(t_map *map)
+{
+	map->c_floor = get_colors(map->floor);
+	printf("C_FLOOR=%x\n", map->c_floor);
+	map->c_ceiling = get_colors(map->ceiling);
+	printf("C_CEILING=%x\n", map->c_ceiling);
+	display_background(map);	
+}
+
+void	sprite_assignor(t_map *map, t_sprite *sprite)
+{
+	sprite->img = mlx_xpm_file_to_image(map->mlx, sprite->rp, &sprite->dim[0], &sprite->dim[1]);
+	if (sprite->img == NULL)
+		error_message("Image could not be read");
+}
+
+void	assing_sprites(t_map *map)
+{
+	sprite_assignor(map, &map->north);
+	sprite_assignor(map, &map->south);
+	sprite_assignor(map, &map->west);
+	sprite_assignor(map, &map->east);
+	mlx_put_image_to_window(map->mlx, map->mlx_win, map->north.img, 128, 0);
+	mlx_put_image_to_window(map->mlx, map->mlx_win, map->south.img, 0, 128);
+	mlx_put_image_to_window(map->mlx, map->mlx_win, map->west.img, 256, 128);
+	mlx_put_image_to_window(map->mlx, map->mlx_win, map->east.img, 128, 256);
 }
 
 //MAIN
@@ -210,5 +336,10 @@ int main (int argc, char **argv)
 	if (argc != 2)
 		error_message("Invalid number of arguments");
 	map_reader(&map, argv[1]);
+	player_starter(&map);
+	image_init(&map);
+	put_background(&map);
+	assing_sprites(&map);
+	mlx_loop(map.mlx);
 	return (0);
 }
