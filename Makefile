@@ -1,5 +1,5 @@
 
-NAME = cub3d.a
+NAME = cub3d
 
 SRCS_MAIN = cub3d.c
 
@@ -24,7 +24,11 @@ $(NAME): $(OBJS_MAIN) $(OBJS)
 	@$(MAKE) -C include/mlx
 	@$(CC) $(CCFLAGS) $(SANITIZE) -framework OpenGL -framework AppKit  $(OBJS_MAIN) $(OBJS) include/libft/libft.a include/mlx/libmlx.a -o $(NAME)
 	@echo "Cub3d done!"
-	
+
+linux: $(OBJS_MAIN) $(OBJS)
+	@$(MAKE) -C include/libft
+	@clang -Wall -Wextra -Werror $(OBJS_MAIN) $(OBJS) -lm -lbsd -lmlx -lXext -lX11 include/libft/libft.a -o $(NAME)
+	@echo "Cub3d done!"	
 
 all: $(NAME)
 
